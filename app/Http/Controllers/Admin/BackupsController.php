@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Business;
 use App\Services\Backups\BackupService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,19 +20,26 @@ class BackupsController extends Controller
             'backups' => $backups->list(),
             'mysqldump' => $backups->hasMysqlDump(),
             'mysqlClient' => $backups->hasMysqlClient(),
+            'businesses' => Business::orderBy('name')->get(['id', 'name']),
         ]);
     }
 
     public function store(Request $request, BackupService $backups): RedirectResponse
     {
-        $type = $request->validate([
-            'type' => ['required', 'in:database,files'],
-        ])['type'];
+        $data = $request->validate([
+            'type' => ['required', 'in:database,files,client'],
+            'business_id' => ['nullable', 'integer', 'exists:businesses,id', 'required_if:type,client'],
+        ], [
+            'business_id.required_if' => 'Elige el cliente para el respaldo.',
+            'business_id.exists' => 'El cliente seleccionado no existe.',
+        ]);
 
         try {
-            $file = $type === 'database'
-                ? $backups->createDatabase()
-                : $backups->createFiles();
+            $file = match ($data['type']) {
+                'database' => $backups->createDatabase(),
+                'files' => $backups->createFiles(),
+                'client' => $backups->createClientDatabase((int) $request->input('business_id')),
+            };
         } catch (Throwable $e) {
             return back()->with('error', 'No se pudo generar el respaldo: '.$e->getMessage());
         }

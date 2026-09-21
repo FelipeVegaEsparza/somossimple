@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Business;
 use App\Models\User;
 use App\Services\Backups\BackupService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -181,5 +182,26 @@ class BackupsTest extends TestCase
 
         @unlink($plain);
         @unlink($gz);
+    }
+
+    public function test_el_respaldo_por_cliente_requiere_elegir_cliente(): void
+    {
+        $this->actingAs($this->admin())
+            ->post(route('admin.backups.store'), ['type' => 'client'])
+            ->assertSessionHasErrors('business_id');
+    }
+
+    public function test_el_respaldo_por_cliente_avisa_si_no_hay_mysqldump(): void
+    {
+        if (app(BackupService::class)->hasMysqlDump()) {
+            $this->markTestSkipped('mysqldump disponible en este entorno.');
+        }
+
+        $business = Business::createForAccount(User::factory()->create(), 'Cliente Test');
+
+        $this->actingAs($this->admin())
+            ->post(route('admin.backups.store'), ['type' => 'client', 'business_id' => $business->id])
+            ->assertRedirect()
+            ->assertSessionHas('error');
     }
 }

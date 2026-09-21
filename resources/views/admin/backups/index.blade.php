@@ -31,6 +31,25 @@
                 <button type="submit" class="btn-secondary">Respaldo de archivos (ZIP)</button>
             </form>
         </div>
+
+        <form method="POST" action="{{ route('admin.backups.store') }}" class="mt-5 border-t border-line pt-5 flex flex-wrap items-end gap-3"
+              onsubmit="return confirm('¿Generar respaldo de este cliente?')">
+            @csrf
+            <input type="hidden" name="type" value="client">
+            <div class="flex-1 min-w-[16rem]">
+                <label for="business_id" class="label">Respaldo de un cliente</label>
+                <select id="business_id" name="business_id" class="input" required>
+                    <option value="">Elige un cliente…</option>
+                    @foreach ($businesses as $business)
+                        <option value="{{ $business->id }}" @selected(old('business_id') == $business->id)>{{ $business->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <button type="submit" class="btn-secondary shrink-0" @disabled(! $mysqldump)>Respaldo del cliente</button>
+        </form>
+        <p class="mt-2 text-xs text-ink-soft">
+            Incluye la ficha del negocio, su cuenta y todos sus datos (catálogo, clientes, reservas, fidelización, ticketera, etc.). No incluye archivos.
+        </p>
     </div>
 
     <div class="card p-6 mt-4 border-danger/30">
@@ -113,8 +132,16 @@
                             <tr class="hover:bg-app/60">
                                 <td class="px-4 py-3 font-mono text-xs">{{ $backup['name'] }}</td>
                                 <td class="px-4 py-3">
-                                    <span class="badge {{ $backup['type'] === 'database' ? 'bg-primary-tint text-primary' : 'bg-app text-ink-soft' }}">
-                                        {{ $backup['type'] === 'database' ? 'Base de datos' : 'Archivos' }}
+                                    <span class="badge {{ match ($backup['type']) {
+                                        'database' => 'bg-primary-tint text-primary',
+                                        'client' => 'bg-[#fff6e0] text-warn',
+                                        default => 'bg-app text-ink-soft',
+                                    } }}">
+                                        {{ match ($backup['type']) {
+                                            'database' => 'Base de datos',
+                                            'client' => 'Cliente',
+                                            default => 'Archivos',
+                                        } }}
                                     </span>
                                 </td>
                                 <td class="px-4 py-3 text-right">{{ $readable }}</td>

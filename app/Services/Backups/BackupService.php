@@ -4,6 +4,7 @@ namespace App\Services\Backups;
 
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use Symfony\Component\Process\Process;
 use Throwable;
@@ -80,7 +81,11 @@ class BackupService
                     'name' => $name,
                     'size' => (int) filesize($path),
                     'created_at' => Carbon::createFromTimestamp((int) filemtime($path)),
-                    'type' => str_contains($name, '-db-') ? 'database' : 'files',
+                    'type' => match (true) {
+                        str_contains($name, '-client-') => 'client',
+                        str_contains($name, '-db-') => 'database',
+                        default => 'files',
+                    },
                 ];
             })
             ->sortByDesc('created_at')
@@ -335,5 +340,125 @@ class BackupService
         }
 
         return $extracted;
+    }
+
+    /**
+     * Respaldo de un solo cliente/negocio: sus filas (y su cuenta) en formato
+     * de datos, listo para reimportar sin tocar a los demás negocios.
+     */
+    public function createClientDatabase(int $businessId): string
+    {
+        if (! $this->hasMysqlDump()) {
+            throw new RuntimeException('mysqldump no está instalado en el servidor.');
+        }
+
+        $config = config('database.connections.mysql');
+        $pdo = DB::connection()->getPdo();
+
+        $business = $pdo->query('SELECT id, account_id FROM businesses WHERE id = '.(int) $businessId)->fetch();
+
+        if (! $business) {
+            throw new RuntimeException('El cliente no existe.');
+        }
+
+        $accountId = (int) $business['account_id'];
+
+        $file = 'backup-client-'.$businessId.'-'.now()->format('Ymd-His').'.sql.gz';
+        $path = $this->dir().'/'.$file;
+
+        $handle = gzopen($path, 'wb');
+        gzwrite($handle, "SET FOREIGN_KEY_CHECKS=0;\nSET NAMES utf8mb4;\n\n");
+
+        try {
+            if ($accountId > 0) {
+                $this->dumpTo($handle, 'users', 'id = '.$accountId, $config);
+            }
+
+            $this->dumpTo($handle, 'businesses', 'id = '.(int) $businessId, $config);
+
+            $tables = $this->tablesWithBusinessId();
+
+            if ($tables !== []) {
+                $this->dumpWhereTo($handle, $tables, 'business_id = '.(int) $businessId, $config);
+            }
+        } catch (Throwable $e) {
+            gzclose($handle);
+            @unlink($path);
+
+            throw new RuntimeException($e->getMessage());
+        }
+
+        gzwrite($handle, "\nSET FOREIGN_KEY_CHECKS=1;\n");
+        gzclose($handle);
+
+        if (! is_file($path)) {
+            throw new RuntimeException('No se pudo generar el respaldo del cliente.');
+        }
+
+        return $file;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function tablesWithBusinessId(): array
+    {
+        $database = config('database.connections.mysql.database');
+
+        $statement = DB::connection()->getPdo()->prepare(
+            'SELECT table_name FROM information_schema.columns WHERE table_schema = ? AND column_name = ? ORDER BY table_name'
+        );
+        $statement->execute([$database, 'business_id']);
+
+        return array_values($statement->fetchAll(\PDO::FETCH_COLUMN));
+    }
+
+    /**
+     * @param  resource  $handle
+     */
+    private function dumpTo($handle, string $table, string $where, array $config): void
+    {
+        $this->dumpWhereTo($handle, [$table], $where, $config);
+    }
+
+    /**
+     * @param  resource  $handle
+     * @param  list<string>  $tables
+     */
+    private function dumpWhereTo($handle, array $tables, string $where, array $config): void
+    {
+        $command = array_merge([
+            'mysqldump',
+            '--host='.$config['host'],
+            '--port='.(string) $config['port'],
+            '--user='.$config['username'],
+            '--single-transaction',
+            '--quick',
+            '--skip-lock-tables',
+            '--no-tablespaces',
+            '--no-create-info',
+            '--skip-add-drop-table',
+            '--replace',
+            '--complete-insert',
+            '--where='.$where,
+            $config['database'],
+        ], $tables);
+
+        $process = new Process($command);
+        $process->setEnv(['MYSQL_PWD' => (string) $config['password']]);
+        $process->setTimeout(900);
+
+        $stderr = '';
+        $process->run(function (string $type, string $buffer) use ($handle, &$stderr) {
+            if ($type === Process::ERR) {
+                $stderr .= $buffer;
+            } else {
+                gzwrite($handle, $buffer);
+            }
+        });
+
+        if (! $process->isSuccessful()) {
+            throw new RuntimeException(trim($stderr) ?: 'mysqldump terminó con error.');
+        }
     }
 }
