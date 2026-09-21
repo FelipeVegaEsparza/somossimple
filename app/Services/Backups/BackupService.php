@@ -49,6 +49,24 @@ class BackupService
     }
 
     /**
+     * Detecta si un archivo es gzip por sus bytes mágicos (el archivo subido
+     * no conserva la extensión original).
+     */
+    public function isGzip(string $path): bool
+    {
+        $handle = @fopen($path, 'rb');
+
+        if ($handle === false) {
+            return false;
+        }
+
+        $magic = fread($handle, 2);
+        fclose($handle);
+
+        return $magic === "\x1f\x8b";
+    }
+
+    /**
      * @return Collection<int, array{name: string, size: int, created_at: Carbon, type: string}>
      */
     public function list(): Collection
@@ -209,7 +227,7 @@ class BackupService
         $sqlPath = $sourcePath;
         $temp = null;
 
-        if (str_ends_with($sourcePath, '.gz')) {
+        if ($this->isGzip($sourcePath)) {
             $temp = tempnam(sys_get_temp_dir(), 'restore_').'.sql';
             $in = gzopen($sourcePath, 'rb');
             $out = fopen($temp, 'wb');

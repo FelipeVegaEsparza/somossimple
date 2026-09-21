@@ -164,4 +164,22 @@ class BackupsTest extends TestCase
             'confirm' => '1',
         ])->assertRedirect()->assertSessionHas('error');
     }
+
+    public function test_detecta_archivos_gzip_por_contenido(): void
+    {
+        $service = app(BackupService::class);
+
+        $plain = tempnam(sys_get_temp_dir(), 'sql');
+        file_put_contents($plain, 'SELECT 1;');
+        $this->assertFalse($service->isGzip($plain));
+
+        $gz = tempnam(sys_get_temp_dir(), 'gz');
+        $handle = gzopen($gz, 'wb');
+        gzwrite($handle, 'SELECT 1;');
+        gzclose($handle);
+        $this->assertTrue($service->isGzip($gz));
+
+        @unlink($plain);
+        @unlink($gz);
+    }
 }
