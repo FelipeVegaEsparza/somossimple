@@ -272,4 +272,21 @@ class BusinessProfileTest extends TestCase
         $this->actingAs($user)->delete(route('panel.profile.cover.destroy'))->assertRedirect();
         $this->assertNull($business->fresh()->cover_path);
     }
+
+    public function test_el_perfil_incluye_metadatos_para_compartir(): void
+    {
+        [, $business] = $this->negocioConCuenta();
+        $business->update([
+            'description' => 'Barbería en Chile Chico.',
+            'logo_path' => 'perfil/logo.jpg',
+        ]);
+
+        $this->get(route('p.show', $business->slug))
+            ->assertOk()
+            ->assertSee('property="og:title"', false)
+            ->assertSee('property="og:image"', false)
+            ->assertSee('name="twitter:card"', false)
+            ->assertSee('Barbería Patagonia', false)
+            ->assertSee('perfil/logo.jpg', false);
+    }
 }
