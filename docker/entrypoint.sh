@@ -19,15 +19,21 @@ php artisan storage:link >/dev/null 2>&1 || true
 
 chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
 
+echo "[entrypoint] DB -> host=${DB_HOST} port=${DB_PORT} db=${DB_DATABASE} user=${DB_USERNAME}"
+
 wait_for_db() {
     attempt=0
-    until php artisan migrate:status >/dev/null 2>&1; do
+    while :; do
+        if output=$(php artisan migrate:status 2>&1); then
+            return 0
+        fi
         attempt=$((attempt + 1))
+        echo "[entrypoint] Sin conexión a la base de datos (intento ${attempt}):"
+        echo "$output" | tail -n 8
         if [ "$attempt" -ge 40 ]; then
-            echo "[entrypoint] No se pudo conectar a la base de datos tras ${attempt} intentos." >&2
+            echo "[entrypoint] Abortando: no se pudo conectar a la base de datos."
             return 1
         fi
-        echo "[entrypoint] Esperando base de datos... (intento $attempt)"
         sleep 3
     done
 }
