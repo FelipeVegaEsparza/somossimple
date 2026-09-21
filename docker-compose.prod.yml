@@ -122,7 +122,15 @@ services:
                 condition: service_healthy
         expose:
             - "80"
-        # En Dokploy: dominio (ej. db.somossimple.cl) -> servicio phpmyadmin, puerto 80.
+        # Ruteo directo con Traefik (mismo patrón de Dokploy).
+        # Si usas el dominio desde la UI de Dokploy, elimina estas labels para no duplicar.
+        labels:
+            - "traefik.enable=true"
+            - "traefik.docker.network=dokploy-network"
+            - "traefik.http.routers.somossimple-pma.rule=Host(`${PMA_DOMAIN:-db.somossimple.cl}`)"
+            - "traefik.http.routers.somossimple-pma.entrypoints=websecure"
+            - "traefik.http.routers.somossimple-pma.tls.certresolver=letsencrypt"
+            - "traefik.http.services.somossimple-pma.loadbalancer.server.port=80"
 
 volumes:
     storage:
