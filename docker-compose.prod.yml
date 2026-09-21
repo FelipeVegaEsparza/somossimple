@@ -107,6 +107,23 @@ services:
             retries: 30
         # No se expone al exterior; solo lo usa la app por la red interna.
 
+    phpmyadmin:
+        image: phpmyadmin:5
+        restart: unless-stopped
+        networks:
+            - dokploy-network
+        environment:
+            PMA_HOST: mysql
+            PMA_PORT: 3306
+            PMA_ABSOLUTE_URI: ${PMA_ABSOLUTE_URI:-https://db.somossimple.cl/}
+            UPLOAD_LIMIT: 64M
+        depends_on:
+            mysql:
+                condition: service_healthy
+        expose:
+            - "80"
+        # En Dokploy: dominio (ej. db.somossimple.cl) -> servicio phpmyadmin, puerto 80.
+
 volumes:
     storage:
     mysql-data:
