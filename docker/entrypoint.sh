@@ -8,6 +8,7 @@ role="${1:-web}"
 # Directorios de escritura necesarios.
 mkdir -p \
     storage/app/public \
+    storage/app/backups \
     storage/framework/cache/data \
     storage/framework/sessions \
     storage/framework/views \

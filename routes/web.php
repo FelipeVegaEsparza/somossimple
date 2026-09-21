@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\BackupsController;
 use App\Http\Controllers\Admin\KitRequestsController;
 use App\Http\Controllers\Admin\KitsController;
 use App\Http\Controllers\Admin\ModuleRequestsController;
@@ -118,6 +119,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('activaciones', [ModuleRequestsController::class, 'index'])->name('modulerequests.index');
     Route::post('activaciones/{modulerequest}/aprobar', [ModuleRequestsController::class, 'approve'])->name('modulerequests.approve');
     Route::post('activaciones/{modulerequest}/rechazar', [ModuleRequestsController::class, 'decline'])->name('modulerequests.decline');
+
+    Route::get('respaldos', [BackupsController::class, 'index'])->name('backups.index');
+    Route::post('respaldos', [BackupsController::class, 'store'])->name('backups.store');
+    Route::get('respaldos/{file}/descargar', [BackupsController::class, 'download'])->name('backups.download');
+    Route::delete('respaldos/{file}', [BackupsController::class, 'destroy'])->name('backups.destroy');
 });
 
 Route::middleware('auth')->prefix('panel')->name('panel.')->group(function () {

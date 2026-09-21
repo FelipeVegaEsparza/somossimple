@@ -34,7 +34,7 @@ RUN composer install \
 FROM php:8.4-fpm AS app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        nginx supervisor git unzip curl \
+        nginx supervisor git unzip curl default-mysql-client \
         libpng-dev libjpeg-dev libfreetype6-dev libzip-dev libonig-dev libicu-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j"$(nproc)" pdo pdo_mysql mbstring gd zip bcmath intl opcache pcntl \
