@@ -137,6 +137,10 @@ Route::middleware('auth')->prefix('panel')->name('panel.')->group(function () {
     Route::put('perfil', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('perfil/galeria/{image}', [ProfileController::class, 'destroyGalleryImage'])
         ->name('profile.gallery.destroy');
+    Route::delete('perfil/logo', [ProfileController::class, 'destroyLogo'])
+        ->name('profile.logo.destroy');
+    Route::delete('perfil/portada', [ProfileController::class, 'destroyCover'])
+        ->name('profile.cover.destroy');
 
     Route::get('kit', [KitController::class, 'index'])->name('kit.index');
     Route::post('kit', [KitController::class, 'activate'])->name('kit.activate');

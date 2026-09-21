@@ -101,6 +101,30 @@ class ProfileController extends Controller
         return back()->with('status', 'Imagen eliminada de la galería.');
     }
 
+    public function destroyLogo(): RedirectResponse
+    {
+        $business = auth()->user()->business;
+
+        if ($business->logo_path) {
+            Storage::disk('public')->delete($business->logo_path);
+            $business->update(['logo_path' => null]);
+        }
+
+        return back()->with('status', 'Logo eliminado.');
+    }
+
+    public function destroyCover(): RedirectResponse
+    {
+        $business = auth()->user()->business;
+
+        if ($business->cover_path) {
+            Storage::disk('public')->delete($business->cover_path);
+            $business->update(['cover_path' => null]);
+        }
+
+        return back()->with('status', 'Imagen de portada eliminada.');
+    }
+
     private function syncLinks($business, Request $request): void
     {
         $business->profileLinks()->delete();

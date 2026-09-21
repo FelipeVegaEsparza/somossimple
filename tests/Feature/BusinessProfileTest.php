@@ -245,4 +245,31 @@ class BusinessProfileTest extends TestCase
         $this->actingAs($user)->delete(route('panel.profile.gallery.destroy', $image))->assertRedirect();
         $this->assertEquals(0, $business->gallery()->count());
     }
+
+    public function test_muestra_y_elimina_logo_y_portada(): void
+    {
+        [$user, $business] = $this->negocioConCuenta();
+
+        $this->actingAs($user)->put(route('panel.profile.update'), [
+            'name' => $business->name,
+            'logo' => UploadedFile::fake()->image('logo.jpg', 40, 40),
+            'cover' => UploadedFile::fake()->image('cover.jpg', 80, 40),
+        ])->assertRedirect();
+
+        $business->refresh();
+        $this->assertNotNull($business->logo_path);
+        $this->assertNotNull($business->cover_path);
+
+        // El panel muestra las imágenes actuales.
+        $this->actingAs($user)->get(route('panel.profile.edit'))
+            ->assertOk()
+            ->assertSee($business->logo_path)
+            ->assertSee($business->cover_path);
+
+        $this->actingAs($user)->delete(route('panel.profile.logo.destroy'))->assertRedirect();
+        $this->assertNull($business->fresh()->logo_path);
+
+        $this->actingAs($user)->delete(route('panel.profile.cover.destroy'))->assertRedirect();
+        $this->assertNull($business->fresh()->cover_path);
+    }
 }

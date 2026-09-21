@@ -34,12 +34,24 @@
                     <label for="logo" class="label">Logo</label>
                     <input id="logo" type="file" name="logo" accept="image/*" class="input">
                     @error('logo') <p class="error-msg">{{ $message }}</p> @enderror
+                    @if ($business->logo_path)
+                        <div class="mt-3 flex items-center gap-3">
+                            <img src="{{ asset('storage/'.$business->logo_path) }}" alt="Logo actual" class="w-16 h-16 object-cover rounded-lg border border-line bg-app">
+                            <button type="submit" form="delete-logo" class="btn-ghost text-danger" onclick="return confirm('¿Eliminar el logo?')">Eliminar logo</button>
+                        </div>
+                    @endif
                 </div>
 
                 <div>
                     <label for="cover" class="label">Imagen de portada</label>
                     <input id="cover" type="file" name="cover" accept="image/*" class="input">
                     @error('cover') <p class="error-msg">{{ $message }}</p> @enderror
+                    @if ($business->cover_path)
+                        <div class="mt-3 flex items-center gap-3">
+                            <img src="{{ asset('storage/'.$business->cover_path) }}" alt="Portada actual" class="w-28 h-16 object-cover rounded-lg border border-line bg-app">
+                            <button type="submit" form="delete-cover" class="btn-ghost text-danger" onclick="return confirm('¿Eliminar la imagen de portada?')">Eliminar portada</button>
+                        </div>
+                    @endif
                 </div>
 
                 <div>
@@ -174,6 +186,14 @@
     </form>
 
     {{-- Formularios de eliminación fuera del formulario principal (no se pueden anidar). --}}
+    <form id="delete-logo" method="POST" action="{{ route('panel.profile.logo.destroy') }}" class="hidden">
+        @csrf
+        @method('DELETE')
+    </form>
+    <form id="delete-cover" method="POST" action="{{ route('panel.profile.cover.destroy') }}" class="hidden">
+        @csrf
+        @method('DELETE')
+    </form>
     @foreach ($business->gallery as $image)
         <form id="delete-gallery-{{ $image->id }}" method="POST" action="{{ route('panel.profile.gallery.destroy', $image) }}" class="hidden">
             @csrf
