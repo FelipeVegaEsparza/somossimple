@@ -142,9 +142,9 @@ class BackupService
     /**
      * Respaldo de los archivos subidos (ZIP del disco público).
      */
-    public function createFiles(): string
+    public function createFiles(?string $source = null): string
     {
-        $source = storage_path('app/public');
+        $source = $source ?? storage_path('app/public');
         $file = 'backup-files-'.now()->format('Ymd-His').'.zip';
         $path = $this->dir().'/'.$file;
 
@@ -153,6 +153,8 @@ class BackupService
         if ($zip->open($path, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
             throw new RuntimeException('No se pudo crear el archivo ZIP.');
         }
+
+        $added = 0;
 
         if (is_dir($source)) {
             $items = new \RecursiveIteratorIterator(
@@ -163,11 +165,22 @@ class BackupService
                 if ($item->isFile()) {
                     $relative = ltrim(str_replace($source, '', $item->getPathname()), '/');
                     $zip->addFile($item->getPathname(), $relative);
+                    $added++;
                 }
             }
         }
 
         $zip->close();
+
+        if ($added === 0) {
+            @unlink($path);
+
+            throw new RuntimeException('Todavía no hay archivos subidos para respaldar.');
+        }
+
+        if (! is_file($path)) {
+            throw new RuntimeException('No se pudo crear el archivo ZIP.');
+        }
 
         return $file;
     }

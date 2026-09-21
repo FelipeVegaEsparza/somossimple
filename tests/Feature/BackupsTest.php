@@ -77,4 +77,15 @@ class BackupsTest extends TestCase
             ->get(route('admin.backups.download', 'archivo.txt'))
             ->assertNotFound();
     }
+
+    public function test_avisa_cuando_no_hay_archivos_para_respaldar(): void
+    {
+        $empty = storage_path('app/testing-empty');
+        File::ensureDirectoryExists($empty);
+        File::cleanDirectory($empty);
+
+        $this->expectException(\RuntimeException::class);
+
+        app(BackupService::class)->createFiles($empty);
+    }
 }
