@@ -21,6 +21,8 @@ class PwaController extends Controller
         $business = $this->business($slug);
         $theme = $business->profileTheme()->preview();
         $startUrl = '/'.$business->slug;
+        $iconVersion = substr(md5(($business->logo_path ?? '').'|'.($business->updated_at?->timestamp ?? 0)), 0, 8);
+        $icon = fn (int $size) => route('p.icon', [$business->slug, $size], false).'?v='.$iconVersion;
 
         $manifest = [
             'id' => $startUrl,
@@ -35,9 +37,9 @@ class PwaController extends Controller
             'background_color' => $theme['app'],
             'theme_color' => $theme['primary'],
             'icons' => [
-                ['src' => route('p.icon', [$business->slug, 192], false), 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],
-                ['src' => route('p.icon', [$business->slug, 512], false), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'],
-                ['src' => route('p.icon', [$business->slug, 512], false), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'],
+                ['src' => $icon(192), 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],
+                ['src' => $icon(512), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'],
+                ['src' => $icon(512), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'],
             ],
         ];
 
