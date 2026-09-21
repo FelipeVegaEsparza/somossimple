@@ -69,6 +69,8 @@ x-app: &app
     depends_on:
         mysql:
             condition: service_healthy
+    networks:
+        - somossimple
 
 services:
     web:
@@ -89,6 +91,8 @@ services:
     mysql:
         image: mysql:8.0
         restart: unless-stopped
+        networks:
+            - somossimple
         environment:
             MYSQL_DATABASE: ${DB_DATABASE:-simpledb}
             MYSQL_USER: ${DB_USERNAME:-simple}
@@ -106,3 +110,7 @@ services:
 volumes:
     storage:
     mysql:
+
+networks:
+    somossimple:
+        driver: bridge
