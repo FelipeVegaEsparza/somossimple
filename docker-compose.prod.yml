@@ -1,0 +1,69 @@
+# Despliegue en Dokploy (tipo Docker Compose).
+#
+# Servicios:
+#   web        → nginx + php-fpm (recibe el dominio/Traefik de Dokploy)
+#   worker     → colas (queue:work)
+#   scheduler  → tareas programadas (schedule:run)
+#
+# La base de datos se recomienda como servicio MySQL gestionado por Dokploy;
+# define DB_HOST con su hostname interno. También puedes descomentar el
+# servicio "mysql" de abajo para todo-en-uno.
+#
+# Las variables se leen del archivo .env del proyecto Compose (Dokploy escribe
+# ahí las variables definidas en su panel).
+
+x-app: &app
+    build:
+        context: .
+        dockerfile: Dockerfile.prod
+    restart: unless-stopped
+    env_file:
+        - .env
+    environment:
+        APP_ENV: ${APP_ENV:-production}
+        APP_DEBUG: ${APP_DEBUG:-false}
+        LOG_CHANNEL: ${LOG_CHANNEL:-stderr}
+        SESSION_DRIVER: ${SESSION_DRIVER:-database}
+        CACHE_STORE: ${CACHE_STORE:-database}
+        QUEUE_CONNECTION: ${QUEUE_CONNECTION:-database}
+        FILESYSTEM_DISK: ${FILESYSTEM_DISK:-local}
+    volumes:
+        # Persistencia de subidas (logos, portadas, imágenes de módulos).
+        - storage:/var/www/html/storage/app/public
+
+services:
+    web:
+        <<: *app
+        command: ["web"]
+        expose:
+            - "80"
+        # Dokploy enruta el dominio al puerto 80 de este servicio.
+
+    worker:
+        <<: *app
+        command: ["worker"]
+
+    scheduler:
+        <<: *app
+        command: ["scheduler"]
+
+    # --- Opcional: MySQL dentro del mismo compose -----------------------------
+    # mysql:
+    #     image: mysql:8.0
+    #     restart: unless-stopped
+    #     environment:
+    #         MYSQL_DATABASE: ${DB_DATABASE:-alpha}
+    #         MYSQL_USER: ${DB_USERNAME:-alpha}
+    #         MYSQL_PASSWORD: ${DB_PASSWORD:-alpha_secret}
+    #         MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_secret}
+    #     volumes:
+    #         - mysql:/var/lib/mysql
+    #     healthcheck:
+    #         test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+    #         interval: 5s
+    #         timeout: 5s
+    #         retries: 20
+
+volumes:
+    storage:
+    # mysql:

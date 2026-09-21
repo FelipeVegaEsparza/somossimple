@@ -1,0 +1,197 @@
+@import "tailwindcss";
+
+[x-cloak] { display: none !important; }
+
+@theme {
+    --color-app: #f5f6fa;
+    --color-surface: #ffffff;
+    --color-line: #e4e7ec;
+    --color-ink: #1a2233;
+    --color-ink-soft: #5b6472;
+    --color-ink-faint: #98a1b3;
+    --color-strong: #1a2233;
+    --color-primary: #437eff;
+    --color-primary-deep: #2e6be8;
+    --color-primary-tint: #edf2ff;
+    --color-amber: #ffb400;
+    --color-good: #1f9d55;
+    --color-warn: #b45309;
+    --color-danger: #d92d20;
+    --color-wa: #25d366;
+
+    --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+    --shadow-soft: 0 1px 2px rgb(16 24 40 / 0.05);
+    --shadow-card: 0 1px 3px rgb(16 24 40 / 0.04), 0 4px 12px rgb(16 24 40 / 0.06);
+}
+
+@layer base {
+    body {
+        @apply bg-app text-ink font-sans antialiased;
+    }
+}
+
+@layer components {
+    .card {
+        @apply bg-surface border border-line rounded-xl shadow-card;
+    }
+    .btn-primary {
+        @apply inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 h-10 text-sm font-semibold text-white hover:bg-primary-deep focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors;
+    }
+    .btn-secondary {
+        @apply inline-flex items-center justify-center gap-2 rounded-lg bg-surface border border-line px-4 h-10 text-sm font-semibold text-ink hover:border-ink-faint focus:outline-none focus-visible:ring-2 focus-visible:ring-line transition-colors;
+    }
+    .btn-ghost {
+        @apply inline-flex items-center justify-center gap-2 rounded-lg px-3 h-10 text-sm font-semibold text-ink-soft hover:text-ink hover:bg-app focus:outline-none transition-colors;
+    }
+    .label {
+        @apply block text-[13px] font-semibold text-ink-soft mb-1.5;
+    }
+    .input {
+        @apply w-full rounded-lg border border-line bg-surface px-3.5 h-10 text-sm text-ink placeholder:text-ink-faint focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20;
+    }
+    .input-error {
+        @apply border-danger focus:border-danger focus:ring-danger/20;
+    }
+    .error-msg {
+        @apply text-xs text-danger mt-1.5;
+    }
+    .badge {
+        @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
+    }
+    .table-header {
+        @apply text-left text-[13px] font-semibold text-ink-faint uppercase tracking-wide;
+    }
+}
+
+/* ---------------------------------------------------------------------------
+ * Temas del perfil público.
+ *
+ * Tailwind v4 genera sus utilidades con var(--color-*), var(--radius-*) y
+ * var(--font-sans), así que basta con redefinir esas variables dentro de una
+ * clase contenedora para cambiar toda la paleta, el redondeo y la tipografía
+ * sin duplicar el HTML.
+ * ------------------------------------------------------------------------- */
+
+.theme-clasico {
+    --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+.theme-nocturno {
+    --color-app: #0b0d12;
+    --color-surface: #161922;
+    --color-line: #2a2f3a;
+    --color-ink: #f3f5f9;
+    --color-ink-soft: #a8b0be;
+    --color-ink-faint: #6b7280;
+    --color-primary: #7aa2ff;
+    --color-primary-deep: #9ab8ff;
+    --color-primary-tint: #1c2740;
+    --color-strong: #05070b;
+    --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+    --radius-2xl: 1.25rem;
+}
+
+.theme-calido {
+    --color-app: #faf4ee;
+    --color-surface: #fffdfb;
+    --color-line: #ecdfd4;
+    --color-ink: #2b211b;
+    --color-ink-soft: #6f5f54;
+    --color-ink-faint: #a39287;
+    --color-primary: #d9694a;
+    --color-primary-deep: #c2553a;
+    --color-primary-tint: #fbe7df;
+    --color-strong: #3a2c25;
+    --font-sans: "Lora", ui-serif, Georgia, serif;
+    --radius-lg: 0.875rem;
+    --radius-xl: 1.25rem;
+    --radius-2xl: 1.75rem;
+}
+
+.theme-minimal {
+    --color-app: #ffffff;
+    --color-surface: #ffffff;
+    --color-line: #e6e6e6;
+    --color-ink: #111110;
+    --color-ink-soft: #6b7280;
+    --color-ink-faint: #9ca3af;
+    --color-primary: #111110;
+    --color-primary-deep: #000000;
+    --color-primary-tint: #f3f4f6;
+    --color-strong: #111110;
+    --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+    --radius-lg: 0.25rem;
+    --radius-xl: 0.375rem;
+    --radius-2xl: 0.5rem;
+}
+
+.theme-esmeralda {
+    --color-app: #f3f8f5;
+    --color-surface: #ffffff;
+    --color-line: #d8e8df;
+    --color-ink: #14231c;
+    --color-ink-soft: #526b5f;
+    --color-ink-faint: #8aa397;
+    --color-primary: #18855c;
+    --color-primary-deep: #126b49;
+    --color-primary-tint: #e1f3ea;
+    --color-strong: #0f3d2c;
+    --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+    --radius-2xl: 1.25rem;
+}
+
+.theme-violeta {
+    --color-app: #f7f5fc;
+    --color-surface: #ffffff;
+    --color-line: #e7e2f3;
+    --color-ink: #241b3a;
+    --color-ink-soft: #665a83;
+    --color-ink-faint: #a498c2;
+    --color-primary: #6d4ae0;
+    --color-primary-deep: #5b39c9;
+    --color-primary-tint: #efeafc;
+    --color-strong: #2a1f4d;
+    --font-sans: "Sora", ui-sans-serif, system-ui, sans-serif;
+    --radius-lg: 1rem;
+    --radius-xl: 1.25rem;
+    --radius-2xl: 1.75rem;
+}
+
+.theme-oceano {
+    --color-app: #f2f8fa;
+    --color-surface: #ffffff;
+    --color-line: #d7e8ee;
+    --color-ink: #10232b;
+    --color-ink-soft: #4e6b76;
+    --color-ink-faint: #8aa7b1;
+    --color-primary: #0e8aa8;
+    --color-primary-deep: #0a6f8a;
+    --color-primary-tint: #dff2f8;
+    --color-strong: #0b2b34;
+    --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+    --radius-2xl: 1.25rem;
+}
+
+.theme-elegante {
+    --color-app: #f6f4f0;
+    --color-surface: #fffefc;
+    --color-line: #e6e1d7;
+    --color-ink: #1c1a17;
+    --color-ink-soft: #5f5a51;
+    --color-ink-faint: #9a9285;
+    --color-primary: #b0894a;
+    --color-primary-deep: #977238;
+    --color-primary-tint: #f3ebdc;
+    --color-strong: #1c1a17;
+    --font-sans: "Playfair Display", ui-serif, Georgia, serif;
+    --radius-lg: 0.5rem;
+    --radius-xl: 0.75rem;
+    --radius-2xl: 1rem;
+}

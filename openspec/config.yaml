@@ -1,0 +1,55 @@
+schema: spec-driven
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+# Add your tech stack, conventions, style guides, domain knowledge, etc.
+context: |
+  Producto: plataforma digital para negocios y profesionales (perfil digital propio,
+  accesible por URL/QR/NFC, con módulos de catálogo, reservas, clientes/CRM y
+  comunicaciones). Mercado inicial: Chile (moneda CLP, idioma español). Modelo
+  freemium: Perfil Digital gratuito; Catálogo, Reservas, Clientes y Comunicaciones
+  son módulos de pago activables de forma independiente.
+
+  El documento maestro (docs/documento-maestro.md) es la definición general y el
+  contexto del producto. Las specs de OpenSpec son la fuente operativa para el
+  desarrollo y tienen PRIORIDAD frente al documento maestro si existe contradicción.
+
+  Al desarrollar: no inventar funcionalidades no especificadas. Si algo indispensable
+  no está definido, marcarlo como decisión pendiente, no asumirlo.
+
+  El MVP define 9 capacidades (fijas, no agregar nuevas): accounts, business-profile,
+  catalog, reservations, clients, communications, qr-nfc, analytics, subscriptions.
+  Las specs de cada capacidad son deltas bajo openspec/changes/ que se archivan a
+  openspec/specs/. Las specs se mantienen agnósticas de stack.
+
+  Stack: PHP + Laravel puro (SIN Filament y sin admin packs de diseño prefabricado),
+  MySQL. UI: Blade + Tailwind CSS + Alpine.js para el perfil público (SSR, carga
+  rápida); Livewire para el panel de administración del propietario.
+
+  Diseño: seguir SIEMPRE docs/directrices-diseno.md (sistema: base clara, tarjetas
+  blancas sobre #F5F6FA, acento azul #437EFF, tipografía Inter, inspiración en
+  ejemplo.png). Exigencia del propietario, al pie de la letra: el resultado NO debe
+  parecer hecho por IA ni por plantilla. Antes de dar por terminada cualquier
+  pantalla, contrastarla contra las directrices.
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing

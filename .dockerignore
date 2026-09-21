@@ -1,0 +1,30 @@
+vendor
+node_modules
+.git
+.github
+.gitignore
+openspec
+docs
+.opencode
+scripts
+
+# Entornos: se inyectan como variables en Dokploy.
+.env
+.env.*
+
+# Artefactos locales (se generan en el build).
+public/build
+public/hot
+storage/logs/*
+storage/app/public/*
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+
+# Solo desarrollo / tests.
+tests
+phpunit.xml
+.phpunit.result.cache
+
+# Cachés locales (se regeneran en runtime).
+bootstrap/cache/*.php

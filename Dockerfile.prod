@@ -1,0 +1,73 @@
+# syntax=docker/dockerfile:1
+
+########################################
+# 1) Assets (Vite + Tailwind)
+########################################
+FROM node:22-alpine AS assets
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+########################################
+# 2) Dependencias PHP (sin dev)
+########################################
+FROM composer:2 AS vendor
+
+WORKDIR /app
+
+COPY composer.json composer.lock ./
+RUN composer install \
+    --no-dev \
+    --no-interaction \
+    --no-scripts \
+    --prefer-dist \
+    --optimize-autoloader
+
+########################################
+# 3) Imagen de ejecución (nginx + php-fpm)
+########################################
+FROM php:8.4-fpm AS app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        nginx supervisor git unzip curl \
+        libpng-dev libjpeg-dev libfreetype6-dev libzip-dev libonig-dev libicu-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j"$(nproc)" pdo pdo_mysql mbstring gd zip bcmath intl opcache pcntl \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Configuración de servicios
+COPY docker/nginx.conf /etc/nginx/sites-available/default
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY docker/php.ini /usr/local/etc/php/conf.d/zz-app.ini
+
+WORKDIR /var/www/html
+
+# Código de la aplicación
+COPY . .
+
+# Dependencias y assets construidos en etapas anteriores
+COPY --from=vendor /app/vendor ./vendor
+COPY --from=assets /app/public/build ./public/build
+
+RUN mkdir -p \
+        storage/app/public \
+        storage/framework/cache/data \
+        storage/framework/sessions \
+        storage/framework/views \
+        storage/logs \
+        bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R ug+rwX storage bootstrap/cache \
+    && chmod +x docker/entrypoint.sh
+
+EXPOSE 80
+
+ENTRYPOINT ["docker/entrypoint.sh"]
+CMD ["web"]
