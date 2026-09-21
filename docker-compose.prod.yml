@@ -99,7 +99,7 @@ services:
             MYSQL_PASSWORD: ${DB_PASSWORD:-simple_secret}
             MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_secret}
         volumes:
-            - mysql:/var/lib/mysql
+            - mysql-data:/var/lib/mysql
         healthcheck:
             test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u${DB_USERNAME:-simple}", "-p${DB_PASSWORD:-simple_secret}"]
             interval: 5s
@@ -109,7 +109,7 @@ services:
 
 volumes:
     storage:
-    mysql:
+    mysql-data:
 
 networks:
     # Red de Dokploy/Traefik. Todos los servicios van aquí (DNS entre contenedores).
