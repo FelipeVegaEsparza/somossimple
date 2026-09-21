@@ -14,24 +14,41 @@ mkdir -p \
     storage/logs \
     bootstrap/cache
 
-# El enlace público hacia storage/app/public (logos, portadas, imágenes).
 php artisan storage:link >/dev/null 2>&1 || true
 
 chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
 
 echo "[entrypoint] DB -> host=${DB_HOST} port=${DB_PORT} db=${DB_DATABASE} user=${DB_USERNAME}"
 
+# Comprueba la conexión real a la base (sin depender de que exista la tabla de migraciones).
+db_check() {
+    php -r '
+        $host = getenv("DB_HOST") ?: "127.0.0.1";
+        $port = getenv("DB_PORT") ?: "3306";
+        $db   = getenv("DB_DATABASE") ?: "";
+        $user = getenv("DB_USERNAME") ?: "";
+        $pass = getenv("DB_PASSWORD") ?: "";
+        try {
+            new PDO("mysql:host={$host};port={$port};dbname={$db}", $user, $pass, [PDO::ATTR_TIMEOUT => 3]);
+            exit(0);
+        } catch (Throwable $e) {
+            fwrite(STDERR, $e->getMessage());
+            exit(1);
+        }
+    ' 2>&1
+}
+
 wait_for_db() {
     attempt=0
     while :; do
-        if output=$(php artisan migrate:status 2>&1); then
+        if output=$(db_check); then
+            echo "[entrypoint] Base de datos disponible."
             return 0
         fi
         attempt=$((attempt + 1))
-        echo "[entrypoint] Sin conexión a la base de datos (intento ${attempt}):"
-        echo "$output" | tail -n 8
+        echo "[entrypoint] Sin conexión a la base de datos (intento ${attempt}): ${output}"
         if [ "$attempt" -ge 40 ]; then
-            echo "[entrypoint] Abortando: no se pudo conectar a la base de datos."
+            echo "[entrypoint] Abortando: no se pudo conectar a la base de datos." >&2
             return 1
         fi
         sleep 3
