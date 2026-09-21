@@ -71,6 +71,7 @@ x-app: &app
             condition: service_healthy
     networks:
         - somossimple
+        - dokploy-network
 
 services:
     web:
@@ -114,3 +115,6 @@ volumes:
 networks:
     somossimple:
         driver: bridge
+    # Red de Dokploy/Traefik (debe existir en el servidor).
+    dokploy-network:
+        external: true
