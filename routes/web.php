@@ -122,6 +122,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     Route::get('respaldos', [BackupsController::class, 'index'])->name('backups.index');
     Route::post('respaldos', [BackupsController::class, 'store'])->name('backups.store');
+    Route::post('respaldos/restaurar', [BackupsController::class, 'restore'])->name('backups.restore');
     Route::get('respaldos/{file}/descargar', [BackupsController::class, 'download'])->name('backups.download');
     Route::delete('respaldos/{file}', [BackupsController::class, 'destroy'])->name('backups.destroy');
 });

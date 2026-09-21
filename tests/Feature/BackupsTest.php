@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Services\Backups\BackupService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
 use Tests\TestCase;
 
@@ -87,5 +88,80 @@ class BackupsTest extends TestCase
         $this->expectException(\RuntimeException::class);
 
         app(BackupService::class)->createFiles($empty);
+    }
+
+    public function test_restaura_archivos_desde_un_zip(): void
+    {
+        File::delete(storage_path('app/public/restore-demo.txt'));
+
+        $zipPath = tempnam(sys_get_temp_dir(), 'zip').'.zip';
+        $zip = new \ZipArchive;
+        $zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+        $zip->addFromString('restore-demo.txt', 'contenido restaurado');
+        $zip->close();
+
+        $upload = new UploadedFile($zipPath, 'backup-files.zip', 'application/zip', null, true);
+
+        $this->actingAs($this->admin())->post(route('admin.backups.restore'), [
+            'type' => 'files',
+            'file' => $upload,
+            'confirm' => '1',
+        ])->assertRedirect()->assertSessionHas('status');
+
+        $this->assertFileExists(storage_path('app/public/restore-demo.txt'));
+        $this->assertEquals('contenido restaurado', file_get_contents(storage_path('app/public/restore-demo.txt')));
+
+        File::delete(storage_path('app/public/restore-demo.txt'));
+    }
+
+    public function test_ignora_rutas_maliciosas_al_restaurar_un_zip(): void
+    {
+        File::delete(storage_path('app/public/ok.txt'));
+        File::delete(storage_path('app/evil.txt'));
+
+        $zipPath = tempnam(sys_get_temp_dir(), 'zip').'.zip';
+        $zip = new \ZipArchive;
+        $zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+        $zip->addFromString('ok.txt', 'ok');
+        $zip->addFromString('../evil.txt', 'malicioso');
+        $zip->close();
+
+        $upload = new UploadedFile($zipPath, 'backup-files.zip', 'application/zip', null, true);
+
+        $this->actingAs($this->admin())->post(route('admin.backups.restore'), [
+            'type' => 'files',
+            'file' => $upload,
+            'confirm' => '1',
+        ])->assertRedirect();
+
+        $this->assertFileExists(storage_path('app/public/ok.txt'));
+        $this->assertFileDoesNotExist(storage_path('app/evil.txt'));
+
+        File::delete(storage_path('app/public/ok.txt'));
+    }
+
+    public function test_requiere_confirmacion_para_restaurar(): void
+    {
+        $upload = UploadedFile::fake()->createWithContent('backup.sql', 'SELECT 1;');
+
+        $this->actingAs($this->admin())->post(route('admin.backups.restore'), [
+            'type' => 'database',
+            'file' => $upload,
+        ])->assertSessionHasErrors('confirm');
+    }
+
+    public function test_restaurar_base_de_datos_avisa_si_no_hay_cliente_mysql(): void
+    {
+        if (app(BackupService::class)->hasMysqlClient()) {
+            $this->markTestSkipped('Cliente mysql disponible en este entorno.');
+        }
+
+        $upload = UploadedFile::fake()->createWithContent('backup.sql', 'SELECT 1;');
+
+        $this->actingAs($this->admin())->post(route('admin.backups.restore'), [
+            'type' => 'database',
+            'file' => $upload,
+            'confirm' => '1',
+        ])->assertRedirect()->assertSessionHas('error');
     }
 }

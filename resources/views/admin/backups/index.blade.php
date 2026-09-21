@@ -33,6 +33,57 @@
         </div>
     </div>
 
+    <div class="card p-6 mt-4 border-danger/30">
+        <h2 class="text-lg font-semibold text-danger">Restaurar respaldo</h2>
+        <p class="text-sm text-ink-soft mt-0.5">
+            Sube un respaldo para <strong>reemplazar los datos actuales</strong>. Úsalo solo para recuperarte de un problema.
+        </p>
+        <p class="mt-2 rounded-xl bg-red-50 px-4 py-3 text-xs text-danger">
+            Operación destructiva: la base de datos (o los archivos) actuales serán reemplazados por el contenido del respaldo. Antes de restaurar la base se genera un respaldo de seguridad automáticamente.
+        </p>
+
+        <div class="mt-4 grid sm:grid-cols-2 gap-4">
+            <form method="POST" action="{{ route('admin.backups.restore') }}" enctype="multipart/form-data" class="rounded-xl border border-line p-4"
+                  onsubmit="return confirm('¿Restaurar la base de datos? Se reemplazarán los datos actuales.')">
+                @csrf
+                <input type="hidden" name="type" value="database">
+                <h3 class="font-semibold text-sm">Base de datos</h3>
+                <p class="text-xs text-ink-soft mt-0.5">Archivo <code>.sql</code> o <code>.sql.gz</code>.</p>
+                <label class="mt-3 block text-sm">
+                    <input type="file" name="file" accept=".sql,.gz" required class="input @error('file') input-error @enderror">
+                </label>
+                <label class="mt-3 flex items-start gap-2 text-xs text-ink-soft cursor-pointer">
+                    <input type="checkbox" name="confirm" value="1" required class="mt-0.5 w-4 h-4 rounded border-line text-danger accent-danger">
+                    <span>Entiendo que se reemplazarán los datos actuales.</span>
+                </label>
+                <button type="submit" class="btn-secondary border-danger/40 text-danger mt-3 w-full" @disabled(! $mysqlClient)>
+                    Restaurar base de datos
+                </button>
+                @if (! $mysqlClient)
+                    <p class="mt-2 text-xs text-danger">El cliente <code>mysql</code> no está disponible en el servidor.</p>
+                @endif
+            </form>
+
+            <form method="POST" action="{{ route('admin.backups.restore') }}" enctype="multipart/form-data" class="rounded-xl border border-line p-4"
+                  onsubmit="return confirm('¿Restaurar los archivos? Se sobrescribirán los archivos con el mismo nombre.')">
+                @csrf
+                <input type="hidden" name="type" value="files">
+                <h3 class="font-semibold text-sm">Archivos subidos</h3>
+                <p class="text-xs text-ink-soft mt-0.5">Archivo <code>.zip</code> generado por esta sección.</p>
+                <label class="mt-3 block text-sm">
+                    <input type="file" name="file" accept=".zip" required class="input @error('file') input-error @enderror">
+                </label>
+                <label class="mt-3 flex items-start gap-2 text-xs text-ink-soft cursor-pointer">
+                    <input type="checkbox" name="confirm" value="1" required class="mt-0.5 w-4 h-4 rounded border-line text-danger accent-danger">
+                    <span>Entiendo que se sobrescribirán los archivos actuales.</span>
+                </label>
+                <button type="submit" class="btn-secondary border-danger/40 text-danger mt-3 w-full">
+                    Restaurar archivos
+                </button>
+            </form>
+        </div>
+    </div>
+
     <div class="card overflow-hidden mt-4">
         @if ($backups->isEmpty())
             <div class="p-8 text-center">

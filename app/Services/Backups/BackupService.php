@@ -28,8 +28,18 @@ class BackupService
 
     public function hasMysqlDump(): bool
     {
+        return $this->hasCommand('mysqldump');
+    }
+
+    public function hasMysqlClient(): bool
+    {
+        return $this->hasCommand('mysql');
+    }
+
+    private function hasCommand(string $command): bool
+    {
         try {
-            $process = Process::fromShellCommandline('command -v mysqldump');
+            $process = Process::fromShellCommandline('command -v '.escapeshellarg($command));
             $process->run();
 
             return $process->isSuccessful();
@@ -183,5 +193,129 @@ class BackupService
         }
 
         return $file;
+    }
+
+    /**
+     * Restaura la base de datos desde un archivo .sql o .sql.gz.
+     */
+    public function restoreDatabase(string $sourcePath): void
+    {
+        if (! $this->hasMysqlClient()) {
+            throw new RuntimeException('El cliente mysql no está instalado en el servidor.');
+        }
+
+        $config = config('database.connections.mysql');
+
+        $sqlPath = $sourcePath;
+        $temp = null;
+
+        if (str_ends_with($sourcePath, '.gz')) {
+            $temp = tempnam(sys_get_temp_dir(), 'restore_').'.sql';
+            $in = gzopen($sourcePath, 'rb');
+            $out = fopen($temp, 'wb');
+
+            while (! gzeof($in)) {
+                fwrite($out, gzread($in, 1 << 20));
+            }
+
+            gzclose($in);
+            fclose($out);
+
+            $sqlPath = $temp;
+        }
+
+        $command = [
+            'mysql',
+            '--host='.$config['host'],
+            '--port='.(string) $config['port'],
+            '--user='.$config['username'],
+            $config['database'],
+        ];
+
+        $input = fopen($sqlPath, 'rb');
+
+        try {
+            $process = new Process($command);
+            $process->setEnv(['MYSQL_PWD' => (string) $config['password']]);
+            $process->setTimeout(900);
+            $process->setInput($input);
+            $process->run();
+        } finally {
+            if (is_resource($input)) {
+                fclose($input);
+            }
+            if ($temp) {
+                @unlink($temp);
+            }
+        }
+
+        if (! $process->isSuccessful()) {
+            throw new RuntimeException(trim($process->getErrorOutput()) ?: 'La restauración de la base de datos falló.');
+        }
+    }
+
+    /**
+     * Restaura los archivos subidos desde un ZIP. Devuelve cuántos archivos extrajo.
+     */
+    public function restoreFiles(string $zipPath): int
+    {
+        $target = storage_path('app/public');
+
+        if (! is_dir($target)) {
+            mkdir($target, 0775, true);
+        }
+
+        $zip = new ZipArchive;
+
+        if ($zip->open($zipPath) !== true) {
+            throw new RuntimeException('No se pudo abrir el archivo ZIP.');
+        }
+
+        $extracted = 0;
+
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $name = (string) $zip->getNameIndex($i);
+            $clean = str_replace('\\', '/', $name);
+
+            // Evita rutas absolutas o saltos de directorio (zip-slip).
+            if ($clean === '' || str_starts_with($clean, '/') || str_contains($clean, '..')) {
+                continue;
+            }
+
+            if (str_ends_with($clean, '/')) {
+                continue;
+            }
+
+            $destination = $target.'/'.$clean;
+            $directory = dirname($destination);
+
+            if (! is_dir($directory)) {
+                mkdir($directory, 0775, true);
+            }
+
+            $stream = $zip->getStream($name);
+
+            if ($stream === false) {
+                continue;
+            }
+
+            $out = fopen($destination, 'wb');
+
+            while (! feof($stream)) {
+                fwrite($out, fread($stream, 1 << 20));
+            }
+
+            fclose($out);
+            fclose($stream);
+            $extracted++;
+        }
+
+        $zip->close();
+
+        if ($extracted === 0) {
+            throw new RuntimeException('El ZIP no contenía archivos válidos.');
+        }
+
+        return $extracted;
     }
 }
